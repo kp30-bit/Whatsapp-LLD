@@ -21,10 +21,12 @@ var (
 
 func NewWhatsap() *whatsapp {
 	WhatsappOnce.Do(func() {
+		messageService := NewMessageService()
+		userService := NewUserService()
 		WhatsappInst = &whatsapp{
-			MessageService:  NewMessageService(),
+			MessageService:  messageService,
 			StrategyService: NewStrategyService(),
-			UserService:     NewUserService(),
+			UserService:     userService,
 		}
 	})
 	return WhatsappInst
@@ -43,8 +45,12 @@ func (w *whatsapp) CreateGroup(group *domain.Group) {
 }
 
 func (w *whatsapp) Send(message *domain.Message) {
-	sender := w.StrategyService.GetDeliveryStrategy(message.Type, w.UserService.users, w.MessageService.groups)
-	err := w.MessageService.SendMessage(message, sender)
+	sender, err := w.StrategyService.GetDeliveryStrategy(message.Type)
+	if err != nil {
+		fmt.Printf("Failed to get delivery strategy with error : %v\n", err)
+		return
+	}
+	err = w.MessageService.SendMessage(message, sender, w.UserService)
 	if err != nil {
 		fmt.Printf("Failed to send message with error : %v\n", err)
 	}

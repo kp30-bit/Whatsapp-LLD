@@ -32,18 +32,25 @@ func (ms *MessageService) CreateGroup(group *domain.Group) {
 	fmt.Printf("Group with name : %v is created\n", group.Name)
 }
 
-func (ms *MessageService) AddUserToGroup(user *domain.User, gId int) error {
-	for _, group := range ms.groups {
-		if group.Id == gId {
-			group.Members = append(group.Members, user)
-			return nil
-		}
+func (ms *MessageService) GetGroupById(id int) (*domain.Group, error) {
+	group, exists := ms.groups[id]
+	if !exists {
+		return nil, fmt.Errorf("Group not found with id : %v", id)
 	}
-	return fmt.Errorf("Group not found with id : %v\n", gId)
+	return group, nil
 }
 
-func (ms *MessageService) SendMessage(message *domain.Message, sender interfaces.IMessageStrategy) error {
-	err := sender.Send(*message)
+func (ms *MessageService) AddUserToGroup(user *domain.User, gId int) error {
+	group, err := ms.GetGroupById(gId)
+	if err != nil {
+		return err
+	}
+	group.Members = append(group.Members, user)
+	return nil
+}
+
+func (ms *MessageService) SendMessage(message *domain.Message, sender interfaces.IMessageStrategy, userService interfaces.IUserService) error {
+	err := sender.Send(*message, userService, ms)
 	if err != nil {
 		return err
 	}

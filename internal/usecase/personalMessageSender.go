@@ -3,19 +3,21 @@ package usecase
 import (
 	"fmt"
 	"whatsapp-lld/internal/domain"
+	interfaces "whatsapp-lld/internal/interface"
 )
 
-type PersonalMessageSender struct {
-	UserList map[int]*domain.User
+type PersonalMessageSender struct{}
+
+func NewPersonalMessageSender() *PersonalMessageSender {
+	return &PersonalMessageSender{}
 }
 
-func (pm PersonalMessageSender) Send(message domain.Message) error {
-	for _, user := range pm.UserList {
-		if user.Id == message.ReceiverId {
-			user.ReceivedMsg[message.Id] = &message
-			fmt.Printf("Message : %v\t Sender: %v | Receiever %v\n", message.Content, message.SenderId, message.ReceiverId)
-			return nil
-		}
+func (pm *PersonalMessageSender) Send(message domain.Message, userService interfaces.IUserService, messageService interfaces.IMessageService) error {
+	receiver, err := userService.GetUserById(message.ReceiverId)
+	if err != nil {
+		return fmt.Errorf("No person found with id : %v", message.ReceiverId)
 	}
-	return fmt.Errorf("No person found with id : %v\n", message.ReceiverId)
+	receiver.ReceivedMsg[message.Id] = &message
+	fmt.Printf("Message : %v\t Sender: %v | Receiver %v\n", message.Content, message.SenderId, message.ReceiverId)
+	return nil
 }

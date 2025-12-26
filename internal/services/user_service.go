@@ -30,10 +30,9 @@ func (u *UserService) RegisterUser(user *domain.User) {
 }
 
 func (u *UserService) GetUserById(id int) (*domain.User, error) {
-	for _, user := range u.users {
-		if user.Id == id {
-			return user, nil
-		}
+	user, exists := u.users[id]
+	if !exists {
+		return nil, fmt.Errorf("User with id : %v not found", id)
 	}
-	return nil, fmt.Errorf("User with id : %v not found\n", id)
+	return user, nil
 }
