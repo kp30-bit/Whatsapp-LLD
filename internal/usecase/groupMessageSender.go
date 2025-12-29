@@ -21,7 +21,7 @@ func (g *GroupMessageSender) isMember(group *domain.Group, userId int) bool {
 	return false
 }
 
-func (g *GroupMessageSender) Send(message domain.Message, userService interfaces.IUserService, messageService interfaces.IMessageService) error {
+func (g *GroupMessageSender) Send(message domain.Message, userService interfaces.IUserService, messageService interfaces.IMessageService, notificationService interfaces.INotificationService) error {
 	group, err := messageService.GetGroupById(message.ReceiverId)
 	if err != nil {
 		return fmt.Errorf("No group found with id : %v", message.ReceiverId)
@@ -42,5 +42,11 @@ func (g *GroupMessageSender) Send(message domain.Message, userService interfaces
 	// Store message in group
 	group.ReceivedMsg[message.Id] = &message
 	fmt.Printf("Message : %v\t Sender: %v | Receiver (Group) %v\n", message.Content, message.SenderId, message.ReceiverId)
+	
+	// Notify all group members using observer pattern
+	if notificationService != nil {
+		notificationService.NotifyGroupMembers(&message, group.Id)
+	}
+	
 	return nil
 }

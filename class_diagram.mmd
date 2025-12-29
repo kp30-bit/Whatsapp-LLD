@@ -1,0 +1,151 @@
+classDiagram
+    %% Domain Layer
+    class User {
+        +int Id
+        +string Name
+        +map[int]*Message ReceivedMsg
+    }
+    
+    class Message {
+        +int Id
+        +int SenderId
+        +int ReceiverId
+        +MessageType Type
+        +string Content
+    }
+    
+    class Group {
+        +int Id
+        +string Name
+        +[]*User Members
+        +map[int]*Message ReceivedMsg
+    }
+    
+    class MessageType {
+        <<enumeration>>
+        PersonalMessage
+        GroupMessage
+    }
+    
+    %% Interface Layer
+    class IUserService {
+        <<interface>>
+        +GetUserById(int) *User, error
+    }
+    
+    class IMessageService {
+        <<interface>>
+        +GetGroupById(int) *Group, error
+    }
+    
+    class IMessageStrategy {
+        <<interface>>
+        +Send(Message, IUserService, IMessageService, INotificationService) error
+    }
+    
+    class IObserver {
+        <<interface>>
+        +Notify(*Message, int)
+    }
+    
+    class INotificationService {
+        <<interface>>
+        +Subscribe(int, IObserver)
+        +Unsubscribe(int)
+        +NotifyGroupMembers(*Message, int)
+    }
+    
+    %% Service Layer
+    class UserService {
+        -map[int]*User users
+        +RegisterUser(*User)
+        +GetUserById(int) *User, error
+    }
+    
+    class MessageService {
+        -map[int]*Group groups
+        +CreateGroup(*Group)
+        +GetGroupById(int) *Group, error
+        +AddUserToGroup(*User, int) error
+        +SendMessage(*Message, IMessageStrategy, IUserService, INotificationService) error
+    }
+    
+    class NotificationService {
+        -map[int]IObserver observers
+        +Subscribe(int, IObserver)
+        +Unsubscribe(int)
+        +NotifyGroupMembers(*Message, int)
+    }
+    
+    class UserObserver {
+        -int UserId
+        -string Name
+        +Notify(*Message, int)
+    }
+    
+    class StrategyService {
+        -PersonalMessageSender personalStrategy
+        -GroupMessageSender groupStrategy
+        +GetDeliveryStrategy(MessageType) IMessageStrategy, error
+    }
+    
+    class whatsapp {
+        -MessageService MessageService
+        -StrategyService StrategyService
+        -UserService UserService
+        -NotificationService NotificationService
+        +RegisterUser(*User)
+        +AddUserToGroup(*User, int)
+        +CreateGroup(*Group)
+        +Send(*Message)
+    }
+    
+    %% Use Case Layer
+    class PersonalMessageSender {
+        +Send(Message, IUserService, IMessageService, INotificationService) error
+    }
+    
+    class GroupMessageSender {
+        -isMember(*Group, int) bool
+        +Send(Message, IUserService, IMessageService, INotificationService) error
+    }
+    
+    %% Relationships - Domain
+    User "1" --> "*" Message : receives
+    Group "1" --> "*" User : contains
+    Group "1" --> "*" Message : receives
+    Message --> MessageType : has
+    
+    %% Relationships - Implementation
+    UserService ..|> IUserService : implements
+    MessageService ..|> IMessageService : implements
+    PersonalMessageSender ..|> IMessageStrategy : implements
+    GroupMessageSender ..|> IMessageStrategy : implements
+    NotificationService ..|> INotificationService : implements
+    UserObserver ..|> IObserver : implements
+    
+    %% Relationships - Composition
+    whatsapp *-- MessageService : contains
+    whatsapp *-- StrategyService : contains
+    whatsapp *-- UserService : contains
+    whatsapp *-- NotificationService : contains
+    StrategyService *-- PersonalMessageSender : contains
+    StrategyService *-- GroupMessageSender : contains
+    NotificationService *-- IObserver : manages
+    
+    %% Relationships - Usage/Dependency
+    MessageService --> IMessageStrategy : uses
+    MessageService --> INotificationService : uses
+    PersonalMessageSender --> IUserService : uses
+    PersonalMessageSender --> IMessageService : uses
+    PersonalMessageSender --> INotificationService : uses
+    GroupMessageSender --> IUserService : uses
+    GroupMessageSender --> IMessageService : uses
+    GroupMessageSender --> INotificationService : uses
+    GroupMessageSender --> Group : validates
+    NotificationService --> IObserver : notifies
+    NotificationService --> MessageService : queries
+    whatsapp --> Message : sends
+    whatsapp --> User : manages
+    whatsapp --> Group : manages
+

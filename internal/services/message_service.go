@@ -49,8 +49,8 @@ func (ms *MessageService) AddUserToGroup(user *domain.User, gId int) error {
 	return nil
 }
 
-func (ms *MessageService) SendMessage(message *domain.Message, sender interfaces.IMessageStrategy, userService interfaces.IUserService) error {
-	err := sender.Send(*message, userService, ms)
+func (ms *MessageService) SendMessage(message *domain.Message, sender interfaces.IMessageStrategy, userService interfaces.IUserService, notificationService interfaces.INotificationService) error {
+	err := sender.Send(*message, userService, ms, notificationService)
 	if err != nil {
 		return err
 	}

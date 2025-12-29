@@ -9,9 +9,10 @@ import (
 // this is the facade that is exosed to clients
 
 type whatsapp struct {
-	MessageService  *MessageService
-	StrategyService *StrategyService
-	UserService     *UserService
+	MessageService      *MessageService
+	StrategyService     *StrategyService
+	UserService         *UserService
+	NotificationService *NotificationService
 }
 
 var (
@@ -23,10 +24,12 @@ func NewWhatsap() *whatsapp {
 	WhatsappOnce.Do(func() {
 		messageService := NewMessageService()
 		userService := NewUserService()
+		notificationService := NewNotificationService()
 		WhatsappInst = &whatsapp{
-			MessageService:  messageService,
-			StrategyService: NewStrategyService(),
-			UserService:     userService,
+			MessageService:      messageService,
+			StrategyService:     NewStrategyService(),
+			UserService:         userService,
+			NotificationService: notificationService,
 		}
 	})
 	return WhatsappInst
@@ -34,6 +37,9 @@ func NewWhatsap() *whatsapp {
 
 func (w *whatsapp) RegisterUser(user *domain.User) {
 	w.UserService.RegisterUser(user)
+	// Subscribe user to notifications
+	observer := NewUserObserver(user.Id, user.Name)
+	w.NotificationService.Subscribe(user.Id, observer)
 }
 
 func (w *whatsapp) AddUserToGroup(user *domain.User, gId int) {
@@ -50,7 +56,7 @@ func (w *whatsapp) Send(message *domain.Message) {
 		fmt.Printf("Failed to get delivery strategy with error : %v\n", err)
 		return
 	}
-	err = w.MessageService.SendMessage(message, sender, w.UserService)
+	err = w.MessageService.SendMessage(message, sender, w.UserService, w.NotificationService)
 	if err != nil {
 		fmt.Printf("Failed to send message with error : %v\n", err)
 	}

@@ -12,7 +12,7 @@ func NewPersonalMessageSender() *PersonalMessageSender {
 	return &PersonalMessageSender{}
 }
 
-func (pm *PersonalMessageSender) Send(message domain.Message, userService interfaces.IUserService, messageService interfaces.IMessageService) error {
+func (pm *PersonalMessageSender) Send(message domain.Message, userService interfaces.IUserService, messageService interfaces.IMessageService, notificationService interfaces.INotificationService) error {
 	receiver, err := userService.GetUserById(message.ReceiverId)
 	if err != nil {
 		return fmt.Errorf("No person found with id : %v", message.ReceiverId)
